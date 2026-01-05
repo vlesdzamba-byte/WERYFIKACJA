@@ -1,0 +1,45 @@
+
+import discord
+from discord.ext import commands
+
+TOKEN = "TUTAJ_WKLEJ_TOKEN_BOTA"
+ROLE_ID = 123456789012345678  # ID roli "Zweryfikowany"
+CHANNEL_ID = 123456789012345678  # ID kanału #weryfikacja
+
+intents = discord.Intents.default()
+intents.members = True
+intents.reactions = True
+
+bot = commands.Bot(command_prefix="!", intents=intents)
+
+@bot.event
+async def on_ready():
+    print(f"Zalogowano jako {bot.user}")
+
+@bot.event
+async def on_member_join(member):
+    channel = bot.get_channel(CHANNEL_ID)
+    if channel:
+        msg = await channel.send(
+            f"👋 **Witaj {member.mention}!**\n\n"
+            f"Aby uzyskać dostęp do serwera:\n"
+            f"➡️ kliknij reakcję **✅** poniżej"
+        )
+        await msg.add_reaction("✅")
+
+@bot.event
+async def on_raw_reaction_add(payload):
+    if payload.emoji.name != "✅":
+        return
+
+    guild = bot.get_guild(payload.guild_id)
+    if not guild:
+        return
+
+    role = guild.get_role(ROLE_ID)
+    member = guild.get_member(payload.user_id)
+
+    if member and role and not member.bot:
+        await member.add_roles(role)
+
+bot.run(TOKEN)
